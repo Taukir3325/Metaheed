@@ -1,0 +1,132 @@
+<!-- Rule for USB monitoring in Linux-->
+<group name="Linux, usb">
+  <rule id="111009" level="7">
+    <field name="serial">\w+</field>
+    <field name="type">usb_device</field>
+    <description> ✅ A PNP device $(vendor) $(model) was connected to $(hostname).</description>
+  </rule>
+
+   <rule id="111011" level="10">
+    <if_sid>111009</if_sid>
+    <list field="serial" lookup="not_match_key">etc/lists/usb-drives</list>
+    <description> 🚫 Successfully detected and blocked unauthorized USB device $(vendor) $(model) to $(hostname) </description>
+   </rule>
+  
+ <!--
+   <rule id="111012" level="10">
+    <if_sid>111011</if_sid>
+    
+    <description> 🚫 Successfully blocked unauthorized USB device $(vendor) $(model) to $(hostname) </description>
+    <group>usb_block</group>
+   </rule>
+-->
+</group>
+
+
+
+<!-- Rule for USB monitoring in Windows -->
+
+<!-- Proactive USB Control Rules -->
+
+<group name="windows-usb-proactive-control">
+
+  <!-- Original USB Detection Rule (Event 6416) -->
+  <rule id="111000" level="5">
+    <if_sid>60227</if_sid>
+    <field name="win.system.eventID">^6416$</field>
+    <match>USBSTOR\\Disk</match>
+    <options>no_full_log</options>
+    <description>Windows: USB storage device detected via Event 6416 on $(win.system.computer) - Device: $(win.eventdata.deviceDescription)</description>
+  </rule>
+
+  <!-- Alternative USB Detection Rule (System Events) -->
+  <rule id="111010" level="5">
+    <if_sid>60200</if_sid>
+    <field name="win.system.eventID">^400$|^410$</field>
+    <match>USBSTOR</match>
+    <options>no_full_log</options>
+    <description>Windows: USB storage device detected via System event on $(win.system.computer)</description>
+  </rule>
+
+  <!-- Authorized USB Device -->
+  <rule id="111001" level="8">
+    <if_sid>111000,111010</if_sid>
+    <list field="win.eventdata.deviceId" lookup="match_key">etc/lists/usb-drives</list>
+    <options>no_full_log</options>
+    <description>Windows: ✅ AUTHORIZED USB device $(win.eventdata.deviceDescription) connected on $(win.system.computer)</description>
+  </rule>
+
+  <!-- Unauthorized USB Device -->
+  <rule id="111002" level="12">
+    <if_sid>111000,111010</if_sid>
+    <list field="win.eventdata.deviceId" lookup="not_match_key">etc/lists/usb-drives</list>
+    <options>no_full_log</options>
+    <description>Windows: 🚨 UNAUTHORIZED USB device detected $(win.eventdata.deviceDescription) on $(win.system.computer)</description>
+  </rule>
+
+</group>
+
+
+<!-- Hoaxshell in Windows -->
+
+<group name="win-powershell,">
+
+  <rule id="100500" level="0">
+    <if_group>windows</if_group>
+    <field name="win.system.providerName">^PowerShell$</field>
+    <options>no_full_log</options>
+    <description>Windows Powershell EventLog Entry</description>
+  </rule>
+
+  <rule id="100501" level="13">
+    <if_sid>100500</if_sid>
+    <field name="win.system.eventID">^400$</field> 
+    <field name="win.eventdata.data" type="pcre2">(?i)powershell(?:\.exe)? -e(?:ncodedcommand)?</field>
+    <options>no_full_log</options>
+    <description>PowerShell encoded script executed</description>
+     <mitre>
+      <id>T1059.001</id>
+     </mitre>
+  </rule> 
+</group>  
+  
+ <group name="win-sysmon">
+  <rule id="100502" level="2">
+    <if_sid>92101</if_sid>
+    <field name="win.system.eventID" type="pcre2">^3$</field>
+    <field name="win.eventdata.image" type="pcre2">^C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1\.0\\\\powershell\.exe$</field>
+    <description>Network connection initiated by PowerShell</description>
+     <mitre>
+      <id>T1059.001</id>
+     </mitre>
+  </rule>
+
+  <rule id="100503" level="13" frequency="5" timeframe="60">
+    <if_matched_sid>100502</if_matched_sid>
+    <description>Multiple network connections initiated by PowerShell to "$(win.eventdata.destinationIp)" on port "$(win.eventdata.destinationPort)"</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+</group>
+  
+  
+<!-- VirusTotal in Windows -->
+<group name="virustotal">
+  <rule id="100092" level="12">
+      <if_sid>657</if_sid>
+      <match>Successfully removed threat</match>
+      <description>$(parameters.program) removed threat located at $(parameters.alert.data.virustotal.source.file)</description>
+  </rule>
+
+  <rule id="100093" level="12">
+    <if_sid>657</if_sid>
+    <match>Error removing threat</match>
+    <description>Error removing threat located at $(parameters.alert.data.virustotal.source.file)</description>
+  </rule>
+</group>
+
+
+
+
+

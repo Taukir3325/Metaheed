@@ -1,0 +1,52 @@
+<group name="Lodarat, malware,">
+    <rule id="100601" level="7">
+    <if_sid>61613</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">C:\\\\Users\\\\.+?\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\PowerShell\\\\StartupProfileData-NonInteractive</field>
+    <description>Suspicious PowerShell startup profile file detected.</description>
+    <mitre>
+      <id>T1546.013</id>
+    </mitre>
+  </rule>
+
+   <rule id="100602" level="12">
+    <if_sid>61654</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.targetFilename" type="pcre2">C:\\\\Users\\\\.+?\\\\AppData\\\\Local\\\\Temp\\\\.+?\.ps1</field>
+    <description>Possible LodaRAT malware activity detected: $(win.eventdata.targetFilename) was executed and deleted in the temp directory.</description>
+    <mitre>
+      <id>T1059.001</id>
+    </mitre>
+  </rule>
+
+   <!-- DLL process injection -->
+  <rule id="100603" level="7">
+    <if_sid>61609</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\assembly\\\\NativeImages_v4\.0\.30319_64\\\\mscorlib\\\\.*\\\\mscorlib\.ni\.dll</field>
+    <description>Possible malware infection: PowerShell process loaded mscorlib.ni.dll, possibly indicating process injection.</description>
+    <mitre>
+        <id>T1055</id>
+    </mitre>
+  </rule>
+
+  <rule id="100604" level="7">
+    <if_sid>61609</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\Microsoft\.NET\\\\Framework64\\\\v4\.0\.30319\\\\clrjit\.dll</field>
+    <description>Possible malware infection: PowerShell process loaded clrjit.dll, indicating potential process injection.</description>
+    <mitre>
+        <id>T1055.001</id>
+    </mitre>
+  </rule>
+
+  <rule id="100605" level="7">
+    <if_sid>61609</if_sid>
+    <field name="win.eventdata.Image" type="pcre2">.*\\powershell\.exe</field>
+    <field name="win.eventdata.ImageLoaded" type="pcre2">(?i)[c-z]:\\\\Windows\\\\Microsoft\.NET\\\\Framework64\\\\v4\.0\.30319\\\\mscoreei\.dll</field>
+    <description>Possible malware infection: PowerShell process loaded mscoreei.dll, indicating potential process injection.</description>
+    <mitre>
+        <id>T1055.001</id>
+    </mitre>
+  </rule>
+</group>

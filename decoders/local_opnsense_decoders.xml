@@ -1,0 +1,29 @@
+<!--
+  OPNsense Decoders for Wazuh (Validated)
+  Version: 2.3 - Removed unsupported JSON type
+-->
+<decoder name="opnsense-filterlog">
+  <program_name>filterlog</program_name>
+  <prematch>^\d+,\d+,,</prematch>
+</decoder>
+
+<decoder name="opnsense-filterlog-details">
+  <parent>opnsense-filterlog</parent>
+  <!-- Matches: 1,0,,vtnet0,match,block,in,6,1.1.1.1,2.2.2.2,1234,80 -->
+  <regex>(\d+),(\d+),,([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^,]+)</regex>
+  <order>rule_id,subrule_id,anchor,interface,reason,action,direction,proto,srcip,dstip,srcport,dstport</order>
+  <fts>srcip,dstip</fts>
+</decoder>
+
+<decoder name="opnsense-suricata">
+  <program_name>suricata</program_name>
+  <!-- Match JSON logs without explicit type -->
+  <prematch>^{"timestamp":</prematch>
+</decoder>
+
+<decoder name="suricata-eve-alert">
+  <parent>opnsense-suricata</parent>
+  <!-- Wazuh automatically detects JSON format -->
+  <prematch>"event_type":"alert"</prematch>
+  <fts>alert.signature,src_ip,dest_ip</fts>
+</decoder>

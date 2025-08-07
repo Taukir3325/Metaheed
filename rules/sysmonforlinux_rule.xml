@@ -1,0 +1,207 @@
+<group name="linux,sysmon,">
+<rule id="200150" level="1">
+<decoded_as>sysmon-linux</decoded_as>
+<field name="system.eventId">\.+</field>
+<options>no_full_log</options>
+<description>Sysmon For Linux Event</description>
+<mitre>
+<id>T1204</id>
+</mitre>
+<group>sysmon_event</group>
+</rule>
+<!--EventID = 1-->
+<rule id="200151" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^1$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 1: Process creation $(eventdata.image)
+</description>
+<mitre>
+<id>T1204</id>
+</mitre>
+<group>sysmon_event1</group>
+</rule>
+<!--EventID = 3-->
+<rule id="200152" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^3$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 3: Network connection by $(eventdata.image)
+</description>
+<group>sysmon_event3</group>
+</rule>
+<!--EventID = 5-->
+<rule id="200153" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^5$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 5: Process terminated $(eventdata.image)
+</description>
+<mitre>
+<id>T1204</id>
+</mitre>
+<group>sysmon_event5</group>
+</rule>
+<!--EventID = 9-->
+<rule id="200154" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^9$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 9: Raw Access Read by $(eventdata.image)
+</description>
+<mitre>
+<id>T1204</id>
+</mitre>
+<group>sysmon_event9</group>
+</rule>
+<!--EventID = 11-->
+<rule id="200155" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^11$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 11: FileCreate by $(eventdata.image)
+</description>
+<group>sysmon_event_11</group>
+</rule>
+<!--EventID = 16-->
+<rule id="200156" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^16$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 16: Sysmon config state changed $(Event.EventData.Data.Configuration)
+</description>
+<mitre>
+<id>T1562</id>
+</mitre>
+<group>sysmon_event_16</group>
+</rule>
+<!--EventID = 23-->
+<rule id="200157" level="1">
+<if_sid>200150</if_sid>
+<field name="system.eventId">^23$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 23: FileDelete (A file delete was detected) by $(eventdata.image)
+</description>
+<mitre>
+<id>T1485</id>
+</mitre>
+<group>sysmon_event_23</group>
+</rule>
+<!--Overrides-->
+<!--
+EventID = 3. No alerts for events if Image = /var/ossec/bin/wazuh-agentd
+-->
+<rule id="200200" level="1">
+<if_sid>200152</if_sid>
+<field name="eventdata.image">wazuh-agentd$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 3: Network connection by $(eventdata.image)
+</description>
+<group>sysmon_event3</group>
+</rule>
+<!--
+EventID = 11. No alerts for events if Image = /var/ossec/bin/wazuh-agentd
+-->
+<rule id="200201" level="1">
+<if_sid>200155</if_sid>
+<field name="eventdata.image">wazuh-agentd$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 11: FileCreate by $(eventdata.image)
+</description>
+<group>sysmon_event_11</group>
+</rule>
+<!--
+EventID = 23. No alerts for events if Image = /var/ossec/bin/wazuh-agentd
+-->
+<rule id="200202" level="1">
+<if_sid>200157</if_sid>
+<field name="eventdata.image">wazuh-agentd$</field>
+<options>no_full_log</options>
+<description>
+Sysmon - Event 23: FileDelete (A file delete was detected) by $(eventdata.image)
+</description>
+<mitre>
+<id>T1485</id>
+</mitre>
+<group>sysmon_event_23</group>
+</rule>
+</group>
+
+
+
+<group name="autocolor, malware,">
+
+ <!-- Post malware execution -->
+  <rule id="100401" level="12" frequency="2" ignore="120">
+    <if_sid>200155</if_sid>
+    <field name="eventdata.Image" type="pcre2">(?i).elf</field>
+    <field name="eventdata.targetFilename" type="pcre2">\/var\/log\/cross\/auto-color</field>
+    <description>Auto-color malware duplicates itself as $(eventdata.targetFilename).</description>
+    <mitre>
+      <id>T1036.005</id>
+      <id>T1059</id>
+    </mitre>
+  </rule>
+
+
+  <rule id="100402" level="12" frequency="2" ignore="120">
+    <if_sid>200155</if_sid>
+    <field name="eventdata.Image" type="pcre2">(?i).elf</field>
+    <field name="eventdata.targetFilename" type="pcre2">\/usr\/lib\/[^\/]+\/libcext\.so\.2</field>
+    <description>Auto-color malware created file $(eventdata.TargetFilename) to enable malicious library hooking of libc functions.</description>
+    <mitre>
+      <id>T1574.006</id>
+      <id>T1036.005</id>
+    </mitre>
+  </rule>
+
+
+  <rule id="100403" level="12" frequency="2" ignore="120">
+    <if_sid>200155</if_sid>
+    <field name="eventdata.Image" type="pcre2">(?i).elf</field>
+    <field name="eventdata.targetFilename" type="pcre2">\/etc\/ld\.so\.preload</field>
+    <description>Auto-color malware created file $(eventdata.targetFilename) to load a malicious library for persistence and libc function hooking.</description>
+    <mitre>
+      <id>T1574.006</id>
+      <id>T1546.015</id>
+      <id>T1098</id>
+    </mitre>
+  </rule>
+
+
+    <!-- Rule for File Deletion (Event ID 23)-->
+  <rule id="100404" level="12" frequency="2" ignore="120">
+    <if_sid>200157</if_sid>
+    <field name="eventdata.Image" type="pcre2">(?i).elf</field>
+    <field name="eventdata.targetFilename" type="pcre2">(?i).elf</field>
+    <description>Possible Auto-color malware behavior: deletes its original $(eventdata.targetFilename).</description>
+    <mitre>
+      <id>T1070.004</id>
+    </mitre>
+  </rule>
+
+
+  <!-- Rule for File Creation /var/log/cross/config-err-* -->
+  <rule id="100405" level="12" frequency="2" ignore="120">
+    <if_sid>200155</if_sid>
+    <field name="eventdata.Image" type="pcre2">(?i).elf</field>
+    <field name="eventdata.targetFilename" type="pcre2">\/var\/log\/cross\/(?:.*\/)?config-err-.+</field>
+    <description>Auto-color malware created file $(eventdata.targetFilename) to facilitate enecrypted C2 communication.</description>
+    <mitre>
+      <id>T1071.001</id>
+      <id>T1008</id>
+      <id>T1568</id>
+    </mitre>
+  </rule>
+
+
+</group>

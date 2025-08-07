@@ -1,0 +1,54 @@
+<!--
+  OPNsense Rules for Wazuh
+  Version: 2.2 - Fully Validated
+-->
+<group name="opnsense,firewall,">
+
+  <!-- Base Firewall Log Rule -->
+  <rule id="90000" level="0">
+    <program_name>filterlog</program_name>
+    <description>OPNsense: Base firewall log event</description>
+  </rule>
+
+  <!-- Firewall Block Events -->
+  <rule id="90001" level="5">
+    <if_sid>90000</if_sid>
+    <match>,block,</match>
+    <description>OPNsense: Firewall blocked $srcip -> $dstip:$dstport</description>
+    <group>firewall,block,</group>
+  </rule>
+
+  <!-- Critical Port Scans (Fixed frequency rule) -->
+  <rule id="90002" level="10" frequency="10" timeframe="60">
+    <if_matched_sid>90001</if_matched_sid>
+    <same_source_ip />
+    <match>tcp</match>
+    <description>OPNsense: Port scan detected from $srcip ($1 hits)</description>
+    <group>firewall,attack,port_scan,</group>
+  </rule>
+
+  <!-- Suricata IDS Alerts -->
+  <rule id="90010" level="12">
+    <program_name>suricata</program_name>
+    <match>"event_type":"alert"</match>
+    <description>OPNsense: Suricata Alert - $alert.signature (Severity: $alert.severity)</description>
+    <group>ids,suricata,critical,</group>
+  </rule>
+
+  <!-- High Severity Suricata Alerts -->
+  <rule id="90011" level="14">
+    <if_matched_sid>90010</if_matched_sid>
+    <match>"severity":1</match>
+    <description>OPNsense: CRITICAL Suricata Alert - $alert.signature</description>
+    <group>ids,suricata,critical,</group>
+  </rule>
+
+  <!-- DHCP Events -->
+  <rule id="90020" level="3">
+    <program_name>dhcpd</program_name>
+    <match>DHCPACK|DHCPOFFER</match>
+    <description>OPNsense: DHCP $1 to $3 ($2)</description>
+    <group>network,dhcp,</group>
+  </rule>
+
+</group>
