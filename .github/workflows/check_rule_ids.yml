@@ -3,7 +3,7 @@ name: Check Rule ID Conflicts
 on:
   pull_request:
     branches: [ "main" ]
-    # paths: ["**.xml"]
+    paths: ["rules/*.xml"]  # Only run when rule files are changed
 
 jobs:
   check-rule-ids:
@@ -11,14 +11,14 @@ jobs:
 
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # Updated to v4 for better performance
         with:
           fetch-depth: 0  # Required for git diff and history
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5  # Updated to v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'  # Updated to Python 3.11
 
       - name: Fetch main branch
         run: git fetch origin main
