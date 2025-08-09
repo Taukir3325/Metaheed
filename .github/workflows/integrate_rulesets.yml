@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 jobs:
-
   DaaC:
     runs-on: ubuntu-latest
     steps:
@@ -19,12 +18,31 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             sudo bash -c '
-            cd /var/ossec/etc/
+            # Navigate to Docker volume directory
+            cd /var/lib/docker/volumes/single-node_wazuh_etc/_data
+            
+            # Pull latest changes from remote repository
             git pull origin main
-            chown wazuh:wazuh /var/ossec/etc/decoders/* && chmod 660 /var/ossec/etc/decoders/*
-            chown wazuh:wazuh /var/ossec/etc/rules/* && chmod 660 /var/ossec/etc/rules/*
-            sudo systemctl restart wazuh-manager \
+            
+            # Set permissions for decoder files if they exist
+            if [ -n "$(ls -A decoders/*.xml 2>/dev/null)" ]; then
+              chown wazuh:wazuh /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/*.xml
+              chmod 660 /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/*.xml
+              echo "Decoder file permissions set"
+            fi
+            
+            # Set permissions for rule files if they exist
+            if [ -n "$(ls -A rules/*.xml 2>/dev/null)" ]; then
+              chown wazuh:wazuh /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/*.xml
+              chmod 660 /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/*.xml
+              echo "Rule file permissions set"
+            fi
+            
+            # Restart Wazuh manager (remove -it flag for GitHub Actions)
+            docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart \
             && echo "Ruleset apply SUCCESS!!! - Wazuh manager restarted successfully." \
             || echo "Ruleset apply FAILURE!!! - Wazuh manager failed to restart, check ruleset for error..."
-            sudo systemctl status wazuh-manager -l --no-pager
+            
+            # Check Wazuh manager status (remove -it flag)
+            docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control status
             '
