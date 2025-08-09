@@ -28,19 +28,13 @@ jobs:
             find /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/ -name "*.xml" -size 0 -delete 2>/dev/null || true
             find /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/ -name "*.xml" -size 0 -delete 2>/dev/null || true
             
-            # Set permissions for decoder files if they exist (using UID 999 for container wazuh user)
-            if [ -n "$(ls -A decoders/*.xml 2>/dev/null)" ]; then
-              docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/decoders/
-              docker exec single-node-wazuh.manager-1 chmod -R 644 /var/ossec/etc/decoders/*.xml
-              echo "Decoder file permissions set (UID 999)"
-            fi
+            # Fix ownership for all XML files after git pull (from any UID to container wazuh UID 999)
+            docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/decoders/ 2>/dev/null || true
+            docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/rules/ 2>/dev/null || true
             
-            # Set permissions for rule files if they exist (using UID 999 for container wazuh user)
-            if [ -n "$(ls -A rules/*.xml 2>/dev/null)" ]; then
-              docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/rules/
-              docker exec single-node-wazuh.manager-1 chmod -R 644 /var/ossec/etc/rules/*.xml
-              echo "Rule file permissions set (UID 999)"
-            fi
+            # Set proper permissions for XML files
+            docker exec single-node-wazuh.manager-1 find /var/ossec/etc/decoders/ -name "*.xml" -exec chmod 644 {} \; 2>/dev/null || true
+            docker exec single-node-wazuh.manager-1 find /var/ossec/etc/rules/ -name "*.xml" -exec chmod 644 {} \; 2>/dev/null || true
             
             # Validate XML files before restart
             echo "Validating XML files..."
@@ -53,15 +47,17 @@ jobs:
               fi
             done
             
+            echo "XML validation completed successfully."
+            
             # Restart Wazuh manager
             docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart \
-            && echo "Ruleset apply SUCCESS!!! - Wazuh manager restarted successfully." \
-            || echo "Ruleset apply FAILURE!!! - Wazuh manager failed to restart, check ruleset for error..."
+            && echo "✅ Ruleset apply SUCCESS!!! - Wazuh manager restarted successfully." \
+            || echo "❌ Ruleset apply FAILURE!!! - Wazuh manager failed to restart, check ruleset for error..."
             
             # Verify permissions after restart
             echo "Verifying file ownership..."
-            docker exec single-node-wazuh.manager-1 ls -la /var/ossec/etc/decoders/ | head -5
-            docker exec single-node-wazuh.manager-1 ls -la /var/ossec/etc/rules/ | head -5
+            docker exec single-node-wazuh.manager-1 ls -la /var/ossec/etc/decoders/ | head -3
+            docker exec single-node-wazuh.manager-1 ls -la /var/ossec/etc/rules/ | head -3
             
             # Check Wazuh manager status
             docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control status
