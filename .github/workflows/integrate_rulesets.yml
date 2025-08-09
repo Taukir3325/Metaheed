@@ -8,6 +8,7 @@ on:
 jobs:
   DaaC:
     runs-on: ubuntu-latest
+    timeout-minutes: 3  # ⭐ 3-minute job timeout
     steps:
       - name: Apply modified or new decoders and rules to SIEM
         uses: appleboy/ssh-action@v1.0.0
@@ -16,6 +17,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
+          timeout: 15s        # ⭐ SSH connection timeout
+          command_timeout: 2m # ⭐ Command execution timeout
           script: |
             sudo bash -c '
             # Navigate to Docker volume directory
