@@ -3,7 +3,7 @@
   <rule id="111009" level="7">
     <field name="serial">\w+</field>
     <field name="type">usb_device</field>
-    <description> ✅ 888 A PNP device $(vendor) $(model) was connected to $(hostname).</description>
+    <description> ✅ 999 A PNP device $(vendor) $(model) was connected to $(hostname).</description>
   </rule>
 
    <rule id="111011" level="10">
