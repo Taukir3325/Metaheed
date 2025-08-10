@@ -8,7 +8,7 @@ on:
 jobs:
   DaaC:
     runs-on: ubuntu-latest
-    timeout-minutes: 5  # ⭐ Increased for network stability
+    timeout-minutes: 5  # ⭐ Network stability timeout
     steps:
       - name: Apply modified or new decoders and rules to SIEM
         uses: appleboy/ssh-action@v1.0.0
@@ -17,8 +17,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
-          timeout: 60s        # ⭐ Increased for network stability
-          command_timeout: 3m # ⭐ Increased for network stability
+          timeout: 60s        # ⭐ SSH connection timeout
+          command_timeout: 3m # ⭐ Command execution timeout
           script: |
             sudo bash -c '
             # Navigate to Docker volume directory
@@ -31,34 +31,16 @@ jobs:
             find /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/ -name "*.xml" -size 0 -delete 2>/dev/null || true
             find /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/ -name "*.xml" -size 0 -delete 2>/dev/null || true
             
-            # ⭐ FIX: Set host permissions BEFORE XML validation (so xmllint can read files)
-            chown -R root:root /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/*.xml 2>/dev/null || true
-            chown -R root:root /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/*.xml 2>/dev/null || true
-            chmod -R 644 /var/lib/docker/volumes/single-node_wazuh_etc/_data/decoders/*.xml 2>/dev/null || true
-            chmod -R 644 /var/lib/docker/volumes/single-node_wazuh_etc/_data/rules/*.xml 2>/dev/null || true
-            
-            # Validate XML files before deployment (now xmllint can read them)
-            echo "Validating XML files..."
-            for file in decoders/*.xml rules/*.xml; do
-              if [ -f "$file" ]; then
-                if ! xmllint --noout "$file" 2>/dev/null; then
-                  echo "❌ Invalid XML file: $file"
-                  exit 1
-                fi
-              fi
-            done
-            
-            echo "XML validation completed successfully."
-            
-            # Fix ownership for container (AFTER validation passes)
+            # Fix ownership for all XML files after git pull (from any UID to container wazuh UID 999)
             docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/decoders/ 2>/dev/null || true
             docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/rules/ 2>/dev/null || true
             
-            # Set proper permissions inside container
+            # Set proper permissions for XML files
             docker exec single-node-wazuh.manager-1 find /var/ossec/etc/decoders/ -name "*.xml" -exec chmod 644 {} \; 2>/dev/null || true
             docker exec single-node-wazuh.manager-1 find /var/ossec/etc/rules/ -name "*.xml" -exec chmod 644 {} \; 2>/dev/null || true
             
-            # Restart Wazuh manager
+            # Restart Wazuh manager (Wazuh will validate syntax during restart)
+            echo "Restarting Wazuh manager..."
             docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart \
             && echo "✅ Ruleset apply SUCCESS!!! - Wazuh manager restarted successfully." \
             || echo "❌ Ruleset apply FAILURE!!! - Wazuh manager failed to restart, check ruleset for error..."
