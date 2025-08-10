@@ -20,13 +20,4 @@ jobs:
           timeout: 60s        #  SSH connection timeout
           command_timeout: 3m #  Command execution timeout
           script:
-           sudo bash -c '
-            cd /var/lib/docker/volumes/single-node_wazuh_etc/_data
-            git pull origin main
-            docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/decoders/  && docker exec single-node-wazuh.manager-1 chmod -R 777 /var/ossec/etc/decoders/
-            docker exec single-node-wazuh.manager-1 chown -R 999:999 /var/ossec/etc/rules/ && docker exec single-node-wazuh.manager-1 chmod -R 777 /var/ossec/etc/rules/
-            docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control restart \
-            && echo "Ruleset apply SUCCESS!!! - Wazuh manager restarted successfully." \
-            || echo "Ruleset apply FAILURE!!! - Wazuh manager failed to restart, check ruleset for error..."
-            docker exec single-node-wazuh.manager-1 /var/ossec/bin/wazuh-control status
-            '
+           whoami
