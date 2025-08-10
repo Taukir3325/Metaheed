@@ -4,9 +4,11 @@ on:
     branches: [ "main" ]
     paths: ["**.xml"]
   workflow_dispatch:
+
 jobs:
-  MetaHeed:
+  DaaC:
     runs-on: ubuntu-latest
+    timeout-minutes: 5  # Network stability timeout
     steps:
       - name: Apply modified or new decoders and rules to SIEM
         uses: appleboy/ssh-action@v1.0.0
@@ -15,6 +17,8 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.PORT }}
+          timeout: 60s        #  SSH connection timeout
+          command_timeout: 3m #  Command execution timeout
           script:
            sudo bash -c '
             cd /var/lib/docker/volumes/single-node_wazuh_etc/_data
